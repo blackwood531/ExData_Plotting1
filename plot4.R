@@ -26,9 +26,29 @@ feb <- cbind(datetime[selected],elec[selected,3:9])
 ## make the column name less clunky
 colnames(feb)[1] = "datetime"
 
+## all four plots have the same x-axis, so we might as well make it easy
+drawXAxis <- function(days) {
+    ## create an x-axis with three tick marks (at midnight)
+    ## the labels are computed from the timestamps
+    daynames = strftime(days,"%a")
+    axis(1,at=as.numeric(days),labels=daynames,cex.axis=0.8)    
+}
+
 plotOnCurrentDevice <- function(frame,days) {
-    ## create the plot, suppressing the x-axis,
-    ## which will be created in the next statement
+    ## we'll need four of them, and tweak the margins
+    par(mfcol=c(2,2))
+    
+    ## start with plot2
+    with(frame,plot(datetime,active,type="l",
+            xlab="",ylab="Global Active Power",
+            xaxt="n"
+        )
+    )
+    
+    ## finally, the x-axis
+    drawXAxis(days)
+    
+    ## next comes plot3
     with(frame,
          plot(datetime,meter1,type="l",
             xlab="",ylab="Energy sub metering",
@@ -48,23 +68,46 @@ plotOnCurrentDevice <- function(frame,days) {
 
     ## now the legend - boosting the line width seemed to make
     ## make the legend a little easier to read
+    ## also, this time we remove the box around the legend
+    ## and try to shrink the font
     legend("topright",
            c("Sub_metering_1","Sub_metering_2","Sub_metering_3"),
            lty="solid",
            lwd=2,
+           bty="n",
+           cex=0.83,
            col=c("black","red","blue")
     )
     
-    ## create an x-axis with three tick marks (at midnight)
-    ## the labels are computed from the timestamps
-    daynames = strftime(days,"%a")
-    axis(1,at=as.numeric(days),labels=daynames)
+    ## finally, the x-axis
+    drawXAxis(days)
+    
+    ## the third plot is a lot like plot2
+    with(frame,plot(datetime,voltage,type="l",
+            ylab="Voltage",
+            xaxt="n"
+        )
+    )
+    
+    ## finally, the x-axis
+    drawXAxis(days)
+    
+    ## the last one is pretty similar
+    ## I have to change the y axis label back to the original column name
+    with(frame,plot(datetime,reactive,type="l",
+            ylab="Global_reactive_power",
+            xaxt="n"
+        )
+    )
+    
+    ## finally, the x-axis
+    drawXAxis(days)
 }
 
 ## show the plot on screen
 plotOnCurrentDevice(feb,days)
 
 ## now create the png, in the repository for this assignment
-png(file="../repos/ExData_Plotting1/plot3.png")
+png(file="../repos/ExData_Plotting1/plot4.png")
 plotOnCurrentDevice(feb,days)
 dev.off()

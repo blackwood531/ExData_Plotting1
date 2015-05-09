@@ -8,31 +8,43 @@ colclasses <- c(rep("character",2),rep("numeric",7))
 elec <- read.csv2("household_power_consumption.txt",na.strings=c("?"),dec=".",col.names=colnames,colClasses=colclasses)
 
 ## get the subset for February 1 & 2, 2007
-feb <- elec[elec$date %in% c("1/2/2007","2/2/2007"),]
+## not the most efficient, but makes the date+time values nice and clean
+day1 = strptime("2007-02-01","%Y-%m-%d")
+day2 = strptime("2007-02-02","%Y-%m-%d")
+day3 <- day2 + 86400 # 86,400 seconds/day
+days <- c(day1,day2,day3)        # will come in handy later
 
-## convert the date and time strings to actual dates
-feb <- transform(feb,dt=strptime(paste(date,time),"%d/%m/%Y %H:%M:%S"))
+## convert all of the date + time data into datetime values
+datetime <- strptime(paste(elec$date,elec$time),"%d/%m/%Y %H:%M:%S")
 
-plotOnCurrentDevice <- function(frame) {
+## make a list of the ones we want
+selected <- which(datetime>=day1 & datetime<day3)
+
+## create a new dataframe with just the data we want
+feb <- cbind(datetime[selected],elec[selected,3:9])
+
+## make the column name less clunky
+colnames(feb)[1] = "datetime"
+
+plotOnCurrentDevice <- function(frame,days) {
     ## create the plot, suppressing the x-axis,
     ## which will be created in the next statement
-    with(frame,plot(1:nrow(frame),active,type="l",
+    with(frame,plot(datetime,active,type="l",
             xlab="",ylab="Global Active Power (kilowatts)",
             xaxt="n"
-            ))
+        )
+    )
     
     ## create an x-axis with three tick marks (at midnight)
     ## the labels are computed from the timestamps
-    ## that way this script could work with other date ranges
-    ## besides Feb 1-2, 2007
-    ticks <- which(sapply(1:(nrow(frame)+1),function(x)(x %% 1440)==1))
-    axis(1,at=ticks,labels=strftime(frame$dt[1]+(ticks-1)*60+1,"%a"))
+    daynames = strftime(days,"%a")
+    axis(1,at=as.numeric(days),labels=daynames)
 }
 
 ## show it on screen
-plotOnCurrentDevice(feb)
+plotOnCurrentDevice(feb,days)
 
 ## now create the png, in the repository for this assignment
 png(file="../repos/ExData_Plotting1/plot2.png")
-plotOnCurrentDevice(feb)
+plotOnCurrentDevice(feb,days)
 dev.off()
